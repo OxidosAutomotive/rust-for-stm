@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>What makes Rust so special?</title>
+    <title>Rust, the modern, safe and high-performance language</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="style/style.css"></link>
     <style>
@@ -13,13 +13,14 @@
 
 class: center, middle
 
-# What makes Rust so special?
+# Rust, the modern, safe and high-performance language
 
-.title[.center[![IoT Services and Architectures](images/rust.png)]]
+.small[.center[![Rust](images/rust_logo.png)]]
 
 .left[
-Based on: [Rust ISP 2019](https://github.com/newpavlov/rust-isp-2019) slides  
-Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
+Alexandru Radovici, CEO OxidOS (https://oxidos.io)
+
+Ilustrations by [Mieuneli](http://miau.laura.ro)
 ]
 
 ---
@@ -28,11 +29,111 @@ Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
 
 An introduction to [Rust](https://www.rust-lang.org/) things.
 
+- Why Rust?
+- Usage
 - Ownership and Borrows
 - Enums with payload
 - No NULL references
 - Traits
 - Lifetime annotations
+
+---
+
+class: split-70
+# The C language
+
+.column[
+- Invented in 1972
+- Purpose: writing UNIX
+- Standard: ANSI C
+- Issues
+  - No library
+  - No strings, just arrays of `char`
+  - No data collections library 
+  - ASCII characters
+  - No bounds verification
+  - Pointer arithmetic
+  - No memory management
+- Pros
+  - Fast
+  - The only language (except `C++` and `Pascal`) usable for writing an OS
+  - Works on small embedded devices
+]
+
+.column[
+.small[.center[![Denis Ritchie](images/Dennis_Ritchie_2011.jpg)]]
+]
+
+---
+
+class: split-70
+# The C++ language
+
+.column[
+- Invented in 1985
+- Purpose: improvement to C
+- Standard: ISO/IEC 14882
+- Issues
+  - ASCII characters
+  - No bounds verification
+  - Pointer arithmetic
+  - No memory management
+  - Diamond Problem (multiple inheritance)
+  - Too many compiler flavours
+  - Too many standard versions
+  - No template verification
+- Pros
+  - Fast
+  - Allows the writing of an OS (Linux did not accept it in the kernel)
+  - Works on small embedded devices
+]
+
+.column[
+.small[.center[![Bjarne Stroustrup](images/Bjarne-Stroustrup.jpg)]]
+]
+
+---
+
+class: split-70
+# The Rust language
+
+.column[
+- Invented in 2015
+- Purpose: safe systems language
+- Standard: The Rust Language
+- Pros
+  - No dangling pointers
+  - Memory management
+  - Data collections library
+  - Works on small embedded devices
+  - No implicit typecast
+  - Bounds verification
+  - Fast
+  - Allows the writing of an OS (Linux did accept it in the kernel)
+- Issues
+  - Panics
+  - Macros
+]
+
+.column[
+.small[.center[![Graydon Hoare](images/Graydon-Hoare.jpeg)]]
+.small[.center[![Rust Logo](images/rust_logo.png)]]
+]
+
+---
+# Usage
+
+- Linux Drivers [Rust for Linux](https://rust-for-linux.com/)
+- Windows
+  - https://www.theregister.com/2023/04/27/microsoft_windows_rust/
+  - windows-rs [Rust for Windows](https://learn.microsoft.com/en-us/windows/dev-environment/rust/rust-for-windows)
+- Android Services (1.5 mil LOC)
+- Embedded Systems
+  - Secure Root fo Trust - [OpenTitan](https://opentitan.org/)
+  - Automotive [OxidOS](https://oxidos.io)
+- Blockchain
+  - Substrate
+  - Parity
 
 ---
 
@@ -109,7 +210,7 @@ println!("{}", s1); // error: use of moved value `s1`
 - What would happen if it did? Rust would get very tedious to write:
 
 ```rust
-fn string_length(s: String) -> String {
+fn string_length(s: String) -> (usize, String) {
     // Do whatever here,
     // then return ownership of `s` back to the caller
 }
@@ -119,7 +220,7 @@ fn string_length(s: String) -> String {
     - Imagine having to pass ownership around for 5+ variables at a time :(
 
 ```rust
-fn string_length(s1: String, s2: String, ...) -> (String, String, ...) {
+fn string_length(s1: String, s2: String, ...) -> (return_type, String, String, ...) {
     // Do whatever here,
     // then return ownership of `s1`, `s2`, ... back to the caller
 }
@@ -228,41 +329,6 @@ fn main() {
 ```
 - Error! You can't dereference `string_ref` into a variable binding because that
   would change the ownership of the data.
-
----
-## Borrowing
-
-- Rust will auto-dereference variables...
-    - When making method calls on a reference.
-    - When passing a reference as a function argument.
-
-```rust
-/// `length` only needs `s` temporarily, so it is borrowed.
-fn length(s_ref: &&String) -> usize {
-    // s_ref is auto-dereferenced when you call methods on it.
-    s_ref.len()
-}
-
-fn main() {
-    let s = String::from("");
-    length(&&&&&&&&&&&&s);
-}
-```
-
----
-## Borrowing
-
-- You will have to dereference variables...
-    - When writing into them.
-    - And other times that usage may be ambiguous.
-
-```rust
-let mut a = 5;
-let ref_a = &mut a;
-*ref_a = 4;
-println!("{}", *ref_a + 4);
-// ==> 8
-```
 
 ---
 ## `Copy` Types
@@ -760,43 +826,6 @@ fn main() {
 ```
 
 ---
-### Efective Lifetimes 
-
-```rust
-fn without_first_word<'a> (s: &'a str) -> &'a str {
-    let mut pos = 0;
-    for a in s.chars() {
-        if a != ' ' { pos = pos + 1; }
-        else { break; }
-    }
-    &s[pos..]
-}
-
-fn main() {
-    let s = String::from("ana has apples"); // <--- s lifetime ('ls) starts here
-    let wfw = without_first_word (&s);      // <--- wfw lifetime ('lwfw) starts here
-    // drop (s)                             // <--- s lifetime ('ls) ends here, wfw lifetime ('wfw) ends here (due to 'ls)
-                                            //      t lifetime ('ts) starts here
-    println! ("{}", wfw);                   // <--- wfw lifetime ('lwfw) actually ends here
-}                                           // <--- t lifetime ('ts) ends here
-```
-
----
-### Lifetime annotations
-
-```rust
-fn without_first_word<'a> (s: &'a str) -> &'a str;
-
-fn main() {
-    let s = String::from("ana has apples"); // <--- s lifetime ('ls) starts here
-    let wfw = without_first_word (&s);      // <--- wfw lifetime ('lwfw) starts here
-    // drop (s)                             // <--- s lifetime ('ls) ends here, wfw lifetime ('wfw) ends here (due to 'ls)
-                                            //      t lifetime ('ts) starts here
-    println! ("{}", wfw);                   // <--- wfw lifetime ('lwfw) actually ends here
-}                                           // <--- t lifetime ('ts) ends here
-```
-
----
 ### Question .top_image[![Questions](../images/question.svg)]
 
 Can we use free for `s1` and `s2` before `printf`?
@@ -866,7 +895,7 @@ fn main() {
 Why can't we free s2?
 
 ```rust
-fn append <'a> (s: &'a mut String, n: &'a str) -> &'a str {
+fn append <'a> (s: &'a mut String, n: &'a String) -> &'a String {
     s.push_str (n);
     s
 }
@@ -875,8 +904,8 @@ fn main() {
     let mut s1 = String::from("ip"); 
     let s2 = String::from(" workshop"); 
     let title = append (&mut s1, &s2);
-    // let t1 = s1; // equivalent of free (s1)
-    let t2 = s2; // equivalent of free (s2)
+    // drop(s1);
+    drop(s2); 
     println! ("{}", title);                  
 }                                          
 ```
@@ -886,7 +915,7 @@ fn main() {
 We now can free s2. 
 
 ```rust
-fn append <'a, 'b> (s: &'a mut String, n: &'b str) -> &'a str {
+fn append <'a, 'b> (s: &'a mut String, n: &'b String) -> &'a String {
     s.push_str (n);
     s
 }
@@ -903,13 +932,11 @@ fn main() {
 
 ---
 
-# Coding, Snacks & Drinks
+# Links
 
-Solve the homework before the workshops.
-
-https://classroom.github.com/a/VYBsE08w
-
-.center[.small[![Din Lac in Put](images/rust-for-beginners.png)]]
+- [Website](https://www.rust-lang.org/)
+- [The Rust Programming Language](https://doc.rust-lang.org/stable/book/)
+- [Tour of Rust](https://tourofrust.com/)
 
     </textarea>
     <script src="https://remarkjs.com/downloads/remark-latest.min.js">
