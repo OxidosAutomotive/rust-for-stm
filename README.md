@@ -1,4 +1,4 @@
 # Introduction to Rust
 
-[Rendered](https://upb-rustworkshop.github.io/intro-to-rust/)
+[Rendered](https://oxidosautomotive.github.io/rust-for-stm/)
 
